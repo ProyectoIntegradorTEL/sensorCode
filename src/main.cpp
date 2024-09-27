@@ -1,48 +1,41 @@
-// Incluye las bibliotecas necesarias
+#include "globals.h"
+#include <Arduino.h>
+#include "MPU6050.h"
 #include <Wire.h>
 #include "I2Cdev.h"
-#include "MPU6050.h"
 
-// Crear una instancia del MPU6050
-MPU6050 mpu;
-
-// Variables para almacenar los datos del sensor
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
 void setup() {
-    // Iniciar la comunicación serial a 115200 baudios
     Serial.begin(115200);
     while (!Serial) {
         ; // Espera a que el puerto serie esté listo
     }
 
-    // Iniciar la comunicación I2C
-    Wire.begin();
-
-    // Inicializar el MPU6050
-    Serial.println("Inicializando MPU6050...");
-    mpu.initialize();
-
-    // Verificar la conexión con el MPU6050
-    if (mpu.testConnection()) {
-        Serial.println("Conexión exitosa con MPU6050");
+    // Inicializar el sensor MPU6050
+    Serial.println("Configurando MPU6050...");
+    sensorManager.initialize();
+    delay(500);
+    // Comprobar la conexión con el sensor
+    if (!sensorManager.getMPU6050().testConnection()) {
+        Serial.println("Error: No se pudo conectar con el MPU6050.");
+        while (1); // Detener la ejecución
     } else {
-        Serial.println("Fallo en la conexión con MPU6050");
-        while (1) {
-            // Detener la ejecución si no hay conexión
-        }
+        Serial.println("Conexión con el MPU6050 establecida.");
     }
 
-    // Opcional: Calibrar el sensor (descomentar si es necesario)
-    // mpu.CalibrateAccel(6);
-    // mpu.CalibrateGyro(6);
-    // mpu.PrintActiveOffsets();
+    // Calibrar el acelerómetro y el giroscopio si es necesario
+    // sensorManager.calibrateAccelerometer(6);
+    // sensorManager.calibrateGyro(6);
+    // sensorManager.printOffsets();
+    
+    delay(2000); // Espera para estabilizar el sensor
 }
 
 void loop() {
-    // Leer los datos de aceleración y giroscopio
-    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    // Leer los datos del sensor MPU6050
+    sensorManager.getMPU6050().getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
     // Convertir los valores a unidades físicas
     float accX = ax / 16384.0;  // Conversión para ±2g
