@@ -1,8 +1,6 @@
 #ifndef SENSORMANAGER_H
 #define SENSORMANAGER_H
 
-
-#include <Arduino.h>
 #include "MPU6050.h"
 #include <Wire.h>
 #include "I2Cdev.h"
@@ -13,13 +11,13 @@ private:
 
     MPU6050 mpu;
     ConfigSensor* configSensor;
-    // Constructor privado para que no se pueda instanciar desde fuera
+    
     SensorManager() {}
 
 public:
-    // Función para obtener la única instancia de SensorManager
+    
     static SensorManager& getInstance() {
-        static SensorManager instance; // Variable estática que contiene la instancia única
+        static SensorManager instance; 
         return instance;
     }
 
@@ -30,7 +28,7 @@ public:
 
     // Función para inicializar el sensor
     void initialize() {
-        Wire.begin(21, 22);
+        Wire.begin();
         delay(500);
         mpu.initialize();
         delay(500);

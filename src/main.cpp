@@ -16,6 +16,8 @@ int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
 void setup() {
+
+
     Serial.begin(115200);
     while (!Serial) {
         ; // Espera a que el puerto serie esté listo
@@ -24,6 +26,9 @@ void setup() {
     // Iniciar la comunicación I2C
     Wire.begin();
 
+    sensorManager.initialize();
+
+    /*
 
     // Inicializar el MPU6050
     Serial.println("Inicializando MPU6050...");
@@ -58,11 +63,13 @@ void setup() {
     } else {
         Serial.println("Error durante la calibración de offsets.");
     }
-
+*/
 
 }
 
 void loop() {
+
+    /*
     // Leer los datos del sensor MPU6050
     sensorManager.getMPU6050().getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
@@ -90,4 +97,5 @@ void loop() {
     
     // Esperar 1 segundo antes de la próxima lectura
     delay(1000);
+    */
 }
