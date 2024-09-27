@@ -26,6 +26,7 @@ bool ConfigSensor::setOffsets(int samples){
     {
         sensor.CalibrateAccel(samples);
         sensor.CalibrateGyro(samples);
+
     }
     catch(const std::exception& e)
     {

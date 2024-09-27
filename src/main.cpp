@@ -2,11 +2,10 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include <Wire.h>
-
-
-
+#include "ConfigSensor.h"
 // Crear una instancia del MPU6050
 MPU6050 mpu;
+ConfigSensor configSensor(mpu);
 
 // Variables para almacenar los datos del sensor
 int16_t ax, ay, az;
@@ -36,6 +35,27 @@ void setup() {
 
         }
     }
+
+
+     if(configSensor.setScaleRange(MPU6050_ACCEL_FS_2, MPU6050_GYRO_FS_250)) {
+        Serial.println("Configuración de rangos de escala completa exitosa.");
+    } else {
+        Serial.println("Error en la configuración de rangos de escala completa.");
+    }
+
+
+    if(configSensor.setSamplingFrequency(0, 0)) {
+        Serial.println("Frecuencia de muestreo configurada correctamente.");
+    } else {
+        Serial.println("Error al configurar la frecuencia de muestreo.");
+    }
+
+    if(configSensor.setOffsets(5)) { 
+        Serial.println("Offsets calibrados correctamente.");
+    } else {
+        Serial.println("Error durante la calibración de offsets.");
+    }
+
 
 }
 
