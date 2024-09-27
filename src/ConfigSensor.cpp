@@ -1,6 +1,5 @@
 #include "ConfigSensor.h"
 
-
 ConfigSensor::ConfigSensor(MPU6050 &sensor): sensor(sensor){}
 
 
@@ -26,7 +25,6 @@ bool ConfigSensor::setOffsets(int samples){
     {
         sensor.CalibrateAccel(samples);
         sensor.CalibrateGyro(samples);
-
     }
     catch(const std::exception& e)
     {

@@ -3,16 +3,19 @@
 #include "MPU6050.h"
 #include <Wire.h>
 #include "ConfigSensor.h"
+#include "globals.h"
+
 // Crear una instancia del MPU6050
 MPU6050 mpu;
 ConfigSensor configSensor(mpu);
 
 // Variables para almacenar los datos del sensor
+
+
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
 void setup() {
-    // Iniciar la comunicación serial a 115200 baudios
     Serial.begin(115200);
     while (!Serial) {
         ; // Espera a que el puerto serie esté listo
@@ -60,8 +63,8 @@ void setup() {
 }
 
 void loop() {
-    // Leer los datos de aceleración y giroscopio
-    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    // Leer los datos del sensor MPU6050
+    sensorManager.getMPU6050().getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
     // Convertir los valores a unidades físicas
     float accX = ax / 16384.0;  // Conversión para ±2g
