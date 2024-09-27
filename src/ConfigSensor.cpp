@@ -48,7 +48,7 @@ bool ConfigSensor::setScaleRange(uint8_t accelRange, uint8_t gyroRange){
     //Define gyroscope and accelerometer ranges.    
     sensor.setFullScaleAccelRange(accelRange);    
     sensor.setFullScaleGyroRange(gyroRange);   
-    
+
     if (sensor.getFullScaleAccelRange() != accelRange ||
         sensor.getFullScaleGyroRange() != gyroRange) {
         Serial.println("Error while configuring scale ranges.");
