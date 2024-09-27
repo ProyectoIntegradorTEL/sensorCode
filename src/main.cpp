@@ -1,7 +1,9 @@
 // Incluye las bibliotecas necesarias
-#include <Wire.h>
 #include "I2Cdev.h"
 #include "MPU6050.h"
+#include <Wire.h>
+
+
 
 // Crear una instancia del MPU6050
 MPU6050 mpu;
@@ -20,6 +22,7 @@ void setup() {
     // Iniciar la comunicación I2C
     Wire.begin();
 
+
     // Inicializar el MPU6050
     Serial.println("Inicializando MPU6050...");
     mpu.initialize();
@@ -30,14 +33,10 @@ void setup() {
     } else {
         Serial.println("Fallo en la conexión con MPU6050");
         while (1) {
-            // Detener la ejecución si no hay conexión
+
         }
     }
 
-    // Opcional: Calibrar el sensor (descomentar si es necesario)
-    // mpu.CalibrateAccel(6);
-    // mpu.CalibrateGyro(6);
-    // mpu.PrintActiveOffsets();
 }
 
 void loop() {
