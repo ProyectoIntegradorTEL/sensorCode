@@ -13,7 +13,7 @@ bool DataManager::begin() {
 // Escribe un JsonDocument en el archivo /data.json en LittleFS
 void DataManager::writeJsonToSPIFFS(JsonDocument doc) {
     
-    // Abrir el archivo en modo escritura
+    // Abrir el archivo en modo escritura. Para adjuntar datos al archivo, usar FILE_APPEND en lugar de FILE_WRITE
     File file = SPIFFS.open("/data.json", FILE_WRITE);
     if (!file) {
         Serial.println("Error al abrir el archivo para escribir");
