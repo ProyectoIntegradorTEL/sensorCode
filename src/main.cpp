@@ -11,8 +11,8 @@
 #define BUTTON_START 4  //RED
 
 
-const char* ssid = "URBINA";
-const char* password = "Ricardo101196";
+const char* ssid = "NetName";
+const char* password = "NetPassword";
 DataManager dataManager;
 
 
