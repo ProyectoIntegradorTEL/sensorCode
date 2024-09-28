@@ -6,14 +6,18 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "DataManager.h"
+#include "Secrets.h"
+#include "Buzzer.h"
 
 #define BUTTON_OFFSET 2 //BLUE
 #define BUTTON_START 4  //RED
+#define BUZZER_PIN 5 // Pin digital connected to buzzer
 
 
-const char* ssid = "NetName";
-const char* password = "NetPassword";
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 DataManager dataManager;
+
 
 
 // Variables para almacenar los datos del sensor
@@ -59,7 +63,7 @@ void setup() {
 
     pinMode(BUTTON_OFFSET, INPUT);
     pinMode(BUTTON_START, INPUT);
-    
+    pinMode(BUZZER_PIN, OUTPUT); 
     Serial.begin(115200);
     while (!Serial) {
         ; 
@@ -118,14 +122,19 @@ void setup() {
 }
 
 void loop() {
+
     
     if (digitalRead(BUTTON_OFFSET) == HIGH)
     {
 
-        Serial.print("Boton presionado");
+        Serial.print("Start offset configuration");
+        Buzzer::startSound();
+
         
         if(sensorManager.getConfigSensor()->setOffsets(5)) { 
+            Buzzer::configurationDoneSound();
             Serial.print("Offsets calibrados correctamente.");
+            Buzzer::finishedSound();
         } else {
             Serial.print("Error durante la calibración de offsets.");
         }
@@ -134,6 +143,9 @@ void loop() {
 
     if (digitalRead(BUTTON_START) == HIGH)
     {
+
+        Buzzer::startSound();
+
         Serial.println("Start feching data");
         JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
         Serial.println("Feching data finished");
@@ -144,7 +156,10 @@ void loop() {
         // sendDataToServer(doc);
         Serial.println("Data sent to server");
         JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
-        sendDataToServer(docToSend);
+        //sendDataToServer(docToSend);
+
+        Buzzer::finishedSound();
+
     }
 
 }
