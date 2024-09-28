@@ -1,10 +1,7 @@
 #ifndef SENSORMANAGER_H
 #define SENSORMANAGER_H
 
-
-#include <Arduino.h>
 #include "MPU6050.h"
-#include <Wire.h>
 #include "I2Cdev.h"
 #include "ConfigSensor.h"
 
@@ -30,7 +27,6 @@ public:
 
     // Función para inicializar el sensor
     void initialize() {
-        Wire.begin(21, 22);
         delay(500);
         mpu.initialize();
         delay(500);
