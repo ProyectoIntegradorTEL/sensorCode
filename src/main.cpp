@@ -1,71 +1,95 @@
 // Incluye las bibliotecas necesarias
-#include <Wire.h>
 #include "I2Cdev.h"
 #include "MPU6050.h"
+#include <Wire.h>
+#include "ConfigSensor.h"
+#include "DataFetcher.h"
+#define BUTTON_OFFSET 2 //BLUE
+#define BUTTON_START 4  //RED
 
 // Crear una instancia del MPU6050
 MPU6050 mpu;
+ConfigSensor configSensor(mpu, MPU6050_ACCEL_FS_2, MPU6050_GYRO_FS_250);
+DataFetcher dataFetcher(mpu);
 
 // Variables para almacenar los datos del sensor
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
 void setup() {
-    // Iniciar la comunicación serial a 115200 baudios
+    
+    // Initialize communication for 115200 baudios
+
+    pinMode(BUTTON_OFFSET, INPUT);
+    pinMode(BUTTON_START, INPUT);
+    
     Serial.begin(115200);
     while (!Serial) {
-        ; // Espera a que el puerto serie esté listo
+        ; 
     }
+    //Is important to wait for the serial monitor to open.
+    delay(3000);
 
-    // Iniciar la comunicación I2C
+    // I2C connection
     Wire.begin();
 
-    // Inicializar el MPU6050
+
+    // Initiliaze MPU6050
     Serial.println("Inicializando MPU6050...");
     mpu.initialize();
 
-    // Verificar la conexión con el MPU6050
+    // Test MPU6050 connection
+    
     if (mpu.testConnection()) {
-        Serial.println("Conexión exitosa con MPU6050");
+        Serial.print("Conexión exitosa con MPU6050");
     } else {
-        Serial.println("Fallo en la conexión con MPU6050");
+        Serial.print("Fallo en la conexión con MPU6050");
         while (1) {
-            // Detener la ejecución si no hay conexión
+
         }
     }
 
-    // Opcional: Calibrar el sensor (descomentar si es necesario)
-    // mpu.CalibrateAccel(6);
-    // mpu.CalibrateGyro(6);
-    // mpu.PrintActiveOffsets();
+    // MPU6050 configuration
+
+     if(configSensor.setScaleRange()) {
+        Serial.print("Configuración de rangos de escala completa exitosa.");
+    } else {
+        Serial.print("Error en la configuración de rangos de escala completa.");
+    }
+
+    if(configSensor.setSamplingFrequency(0, 0)) {
+        Serial.print("Frecuencia de muestreo configurada correctamente.");
+    } else {
+        Serial.print("Error al configurar la frecuencia de muestreo.");
+    }
+
+   
+
 }
 
 void loop() {
-    // Leer los datos de aceleración y giroscopio
-    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-    // Convertir los valores a unidades físicas
-    float accX = ax / 16384.0;  // Conversión para ±2g
-    float accY = ay / 16384.0;
-    float accZ = az / 16384.0;
 
-    float gyroX = gx / 131.0;    // Conversión para ±250°/s
-    float gyroY = gy / 131.0;
-    float gyroZ = gz / 131.0;
+    if (digitalRead(BUTTON_OFFSET) == HIGH)
+    {
 
-    // Mostrar los valores convertidos en el monitor serial
-    Serial.print("Acelerómetro: ");
-    Serial.print("X = "); Serial.print(accX, 2);
-    Serial.print(" g | Y = "); Serial.print(accY, 2);
-    Serial.print(" g | Z = "); Serial.print(accZ, 2); Serial.println(" g");
+        Serial.print("Boton presionado");
+        
+        if(configSensor.setOffsets(5)) { 
+            Serial.print("Offsets calibrados correctamente.");
+        } else {
+            Serial.print("Error durante la calibración de offsets.");
+        }
+        
+    }
 
-    Serial.print("Giroscopio: ");
-    Serial.print("X = "); Serial.print(gyroX, 2);
-    Serial.print(" °/s | Y = "); Serial.print(gyroY, 2);
-    Serial.print(" °/s | Z = "); Serial.print(gyroZ, 2); Serial.println(" °/s");
+    if (digitalRead(BUTTON_START) == HIGH)
+    {
 
-    Serial.println("---------------------------");
-    
-    // Esperar 1 segundo antes de la próxima lectura
-    delay(1000);
+        Serial.print("Start feching data");
+        dataFetcher.fetchAndconverDataToJSON(10);
+        Serial.print("Feching data finished");
+        
+    }
+
 }
