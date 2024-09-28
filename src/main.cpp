@@ -6,13 +6,14 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "DataManager.h"
+#include "Secrets.h"
 
 #define BUTTON_OFFSET 2 //BLUE
 #define BUTTON_START 4  //RED
 
 
-const char* ssid = "URBINA";
-const char* password = "Ricardo101196";
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 DataManager dataManager;
 
 
