@@ -4,12 +4,14 @@
 #include "MPU6050.h"
 #include "I2Cdev.h"
 #include "ConfigSensor.h"
+#include "DataFetcher.h"
 
 class SensorManager {
 private:
 
     MPU6050 mpu;
     ConfigSensor* configSensor;
+    DataFetcher* dataFetcher;
     // Constructor privado para que no se pueda instanciar desde fuera
     SensorManager() {}
 
@@ -31,7 +33,10 @@ public:
         mpu.initialize();
         delay(500);
         if (configSensor == nullptr) {
-        configSensor = new ConfigSensor(mpu);
+            configSensor = new ConfigSensor(mpu, MPU6050_ACCEL_FS_2, MPU6050_GYRO_FS_250);
+        }
+        if (dataFetcher == nullptr) {
+            dataFetcher = new DataFetcher(mpu);
         }
     }
 
@@ -42,6 +47,14 @@ public:
     // Método para acceder directamente al objeto MPU6050
     MPU6050& getMPU6050() {
         return mpu;
+    }
+
+    ConfigSensor* getConfigSensor(){
+        return configSensor;
+    }
+
+    DataFetcher* getDataFetcher(){
+        return dataFetcher; 
     }
 };
 
