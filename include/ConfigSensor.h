@@ -9,14 +9,22 @@ class ConfigSensor{
 
     public: 
         
-        ConfigSensor(MPU6050 &sensor);
+        ConfigSensor(MPU6050 &sensor, uint8_t accelRange, uint8_t gyroRange );
+        ~ConfigSensor();
 
         bool setSamplingFrequency(uint8_t DLPFMode, uint8_t rate);
         bool setOffsets(int samples);
-        bool setScaleRange(uint8_t accelRange, uint8_t gyroRange); 
+        bool setScaleRange(); 
+
+        static uint8_t getAccelRange() { return accelRange; }
+        static uint8_t getGyroRange() { return gyroRange; }
+
+        static uint8_t accelRange; 
+        static uint8_t gyroRange;
+      
 
     private: 
-        MPU6050 &sensor;
+        MPU6050 &sensor ;
    
 };
 

@@ -5,7 +5,7 @@
 #include "ConfigSensor.h"
 // Crear una instancia del MPU6050
 MPU6050 mpu;
-ConfigSensor configSensor(mpu);
+ConfigSensor configSensor(mpu, MPU6050_ACCEL_FS_2, MPU6050_GYRO_FS_250);
 
 // Variables para almacenar los datos del sensor
 int16_t ax, ay, az;
@@ -26,7 +26,8 @@ void setup() {
     Serial.println("Inicializando MPU6050...");
     mpu.initialize();
 
-    // Verificar la conexión con el MPU6050
+    // Test MPU6050 connection
+    
     if (mpu.testConnection()) {
         Serial.println("Conexión exitosa con MPU6050");
     } else {
@@ -37,12 +38,13 @@ void setup() {
     }
 
 
-     if(configSensor.setScaleRange(MPU6050_ACCEL_FS_2, MPU6050_GYRO_FS_250)) {
+    // MPU6050 configuration
+
+     if(configSensor.setScaleRange()) {
         Serial.println("Configuración de rangos de escala completa exitosa.");
     } else {
         Serial.println("Error en la configuración de rangos de escala completa.");
     }
-
 
     if(configSensor.setSamplingFrequency(0, 0)) {
         Serial.println("Frecuencia de muestreo configurada correctamente.");
@@ -55,7 +57,6 @@ void setup() {
     } else {
         Serial.println("Error durante la calibración de offsets.");
     }
-
 
 }
 

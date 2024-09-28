@@ -1,7 +1,17 @@
 #include "ConfigSensor.h"
 
+uint8_t ConfigSensor::accelRange;
+uint8_t ConfigSensor::gyroRange;
 
-ConfigSensor::ConfigSensor(MPU6050 &sensor): sensor(sensor){}
+ConfigSensor::ConfigSensor(MPU6050 &sensor, uint8_t accelRange, uint8_t gyroRange): 
+sensor(sensor){
+
+    ConfigSensor::accelRange = accelRange;
+    ConfigSensor::gyroRange = gyroRange;
+
+}
+
+ConfigSensor::~ConfigSensor() {}
 
 
 bool ConfigSensor::setSamplingFrequency(uint8_t DLPFMode, uint8_t rate){
@@ -43,7 +53,7 @@ bool ConfigSensor::setOffsets(int samples){
 }
 
 
-bool ConfigSensor::setScaleRange(uint8_t accelRange, uint8_t gyroRange){     
+bool ConfigSensor::setScaleRange(){     
 
     //Define gyroscope and accelerometer ranges.    
     sensor.setFullScaleAccelRange(accelRange);    
