@@ -2,21 +2,56 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include <Wire.h>
-// #include "ConfigSensor.h"
-// #include "DataFetcher.h"
 #include "globals.h"
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include "DataManager.h"
 
 #define BUTTON_OFFSET 2 //BLUE
 #define BUTTON_START 4  //RED
 
-// Crear una instancia del MPU6050
-// MPU6050 mpu;
-// ConfigSensor configSensor(mpu, MPU6050_ACCEL_FS_2, MPU6050_GYRO_FS_250);
-// DataFetcher dataFetcher(mpu);
+
+const char* ssid = "URBINA";
+const char* password = "Ricardo101196";
+DataManager dataManager;
+
 
 // Variables para almacenar los datos del sensor
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
+
+void sendDataToServer(JsonDocument& doc) {
+    if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+
+        // Dirección IP del servidor y la ruta donde recibirás los datos
+        http.begin("http://192.168.1.3:8080/sensor-data");
+
+        // Establecer el tipo de contenido como JSON
+        http.addHeader("Content-Type", "application/json");
+
+        // Convertir el documento JSON a una cadena
+        String jsonData;
+        serializeJson(doc, jsonData);
+
+        // Enviar la solicitud POST con los datos
+        int httpResponseCode = http.POST(jsonData);
+
+        // Verificar la respuesta del servidor
+        if (httpResponseCode > 0) {
+            String response = http.getString();
+            Serial.println("Respuesta del servidor: " + response);
+        } else {
+            Serial.println("Error en la solicitud: " + String(httpResponseCode));
+        }
+
+        // Finalizar la conexión HTTP
+        http.end();
+    } else {
+        Serial.println("Error de conexión WiFi");
+    }
+}
+
 
 void setup() {
     
@@ -31,6 +66,23 @@ void setup() {
     }
     //Is important to wait for the serial monitor to open.
     delay(3000);
+
+    
+    // Inicializar el sistema de archivos SPIFFS
+    if (!dataManager.begin()) {
+        Serial.println("Error al inicializar el sistema de archivos SPIFFS");
+        return;
+    }
+
+    // WiFi connection setting
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.println("Conectando a WiFi...");
+    }
+
+    Serial.println("Conectado a la red WiFi");
 
     // I2C connection
     Wire.begin();
@@ -48,11 +100,25 @@ void setup() {
     }
     
     delay(2000); // Espera para estabilizar el sensor
+
+        // MPU6050 configuration
+
+     if(sensorManager.getConfigSensor()->setScaleRange()) {
+        Serial.print("Configuración de rangos de escala completa exitosa.");
+    } else {
+        Serial.print("Error en la configuración de rangos de escala completa.");
+    }
+
+    if(sensorManager.getConfigSensor()->setSamplingFrequency(0, 0)) {
+        Serial.print("Frecuencia de muestreo configurada correctamente.");
+    } else {
+        Serial.print("Error al configurar la frecuencia de muestreo.");
+    }
+
 }
 
 void loop() {
-
-
+    
     if (digitalRead(BUTTON_OFFSET) == HIGH)
     {
 
@@ -68,38 +134,20 @@ void loop() {
 
     if (digitalRead(BUTTON_START) == HIGH)
     {
-
-        Serial.print("Start feching data");
-        sensorManager.getDataFetcher()->fetchAndconverDataToJSON(10);
-        Serial.print("Feching data finished");
-        
+        Serial.println("Start feching data");
+        JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
+        Serial.println("Feching data finished");
+        // dataManager.writeJsonToLittleFS(doc);
+        Serial.println("Data writing to file: ");
+        dataManager.writeJsonToSPIFFS(doc);
+        Serial.println("Data sending to server: ");
+        // sendDataToServer(doc);
+        Serial.println("Data sent to server");
+        JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
+        sendDataToServer(docToSend);
     }
 
-    // // Leer los datos del sensor MPU6050
-    // sensorManager.getMPU6050().getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-
-    // // Convertir los valores a unidades físicas
-    // float accX = ax / 16384.0;  // Conversión para ±2g
-    // float accY = ay / 16384.0;
-    // float accZ = az / 16384.0;
-
-    // float gyroX = gx / 131.0;    // Conversión para ±250°/s
-    // float gyroY = gy / 131.0;
-    // float gyroZ = gz / 131.0;
-
-    // // Mostrar los valores convertidos en el monitor serial
-    // Serial.print("Acelerómetro: ");
-    // Serial.print("X = "); Serial.print(accX, 2);
-    // Serial.print(" g | Y = "); Serial.print(accY, 2);
-    // Serial.print(" g | Z = "); Serial.print(accZ, 2); Serial.println(" g");
-
-    // Serial.print("Giroscopio: ");
-    // Serial.print("X = "); Serial.print(gyroX, 2);
-    // Serial.print(" °/s | Y = "); Serial.print(gyroY, 2);
-    // Serial.print(" °/s | Z = "); Serial.print(gyroZ, 2); Serial.println(" °/s");
-
-    // Serial.println("---------------------------");
-    
-    // // Esperar 1 segundo antes de la próxima lectura
-    // delay(1000);
 }
+
+
+
