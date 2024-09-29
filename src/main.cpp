@@ -8,14 +8,24 @@
 #include "DataManager.h"
 #include "Secrets.h"
 #include "Buzzer.h"
+#include "MQTTClientManager.cpp"
 
 #define BUTTON_OFFSET 2 //BLUE
 #define BUTTON_START 4  //RED
 #define BUZZER_PIN 5 // Pin digital connected to buzzer
 
-
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
+
+const char* broker = "9b70538eb18549bd83e08559ada08092.s1.eu.hivemq.cloud";
+const int port = 8883;  // El puerto que se usa para la conexión segura (TLS)
+
+// Tópico MQTT
+const char* topic = "test/topic";
+
+// MQTT manager
+MQTTClientManager mqttManager(broker, port, topic);
+
 DataManager dataManager;
 
 
@@ -91,6 +101,9 @@ void setup() {
     // I2C connection
     Wire.begin();
 
+    // Inicializar MQTT
+    mqttManager.connect();
+
     // Inicializar el sensor MPU6050
     Serial.println("Configurando MPU6050...");
     sensorManager.initialize();
@@ -123,7 +136,8 @@ void setup() {
 
 void loop() {
 
-    
+    mqttManager.loop();
+
     if (digitalRead(BUTTON_OFFSET) == HIGH)
     {
 
