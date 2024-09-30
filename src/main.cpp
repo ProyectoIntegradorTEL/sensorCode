@@ -16,11 +16,8 @@
 
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
-
 const char* broker = "9b70538eb18549bd83e08559ada08092.s1.eu.hivemq.cloud";
-const int port = 8883;  // El puerto que se usa para la conexión segura (TLS)
-
-// Tópico MQTT
+const int port = 8883;
 const char* topic = "test/topic";
 
 // MQTT manager
@@ -101,9 +98,6 @@ void setup() {
     // I2C connection
     Wire.begin();
 
-    // Inicializar MQTT
-    mqttManager.connect();
-
     // Inicializar el sensor MPU6050
     Serial.println("Configurando MPU6050...");
     sensorManager.initialize();
@@ -120,7 +114,7 @@ void setup() {
 
         // MPU6050 configuration
 
-     if(sensorManager.getConfigSensor()->setScaleRange()) {
+    if(sensorManager.getConfigSensor()->setScaleRange()) {
         Serial.print("Configuración de rangos de escala completa exitosa.");
     } else {
         Serial.print("Error en la configuración de rangos de escala completa.");
@@ -131,6 +125,37 @@ void setup() {
     } else {
         Serial.print("Error al configurar la frecuencia de muestreo.");
     }
+
+    // Inicializar MQTT
+    mqttManager.connect(); //Conectar al broker MQTT
+    mqttManager.setCallback([](char* topic, byte* payload, unsigned int length) {
+    Serial.print("Mensaje recibido en el topic: ");
+    Serial.println(topic);
+    String messageTemp;
+    for (int i = 0; i < length; i++) {
+        messageTemp += (char)payload[i];
+    }
+    Serial.println("Mensaje: " + messageTemp);
+
+    if (messageTemp == "start") {
+        Serial.println("Iniciando la prueba...");
+        Buzzer::startSound();
+
+        Serial.println("Start feching data");
+        JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
+        Serial.println("Feching data finished");
+        // dataManager.writeJsonToLittleFS(doc);
+        Serial.println("Data writing to file: ");
+        dataManager.writeJsonToSPIFFS(doc);
+        Serial.println("Data sending to server: ");
+        // sendDataToServer(doc);
+        Serial.println("Data sent to server");
+        JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
+        //sendDataToServer(docToSend);
+
+        Buzzer::finishedSound();
+    }
+    });
 
 }
 
@@ -155,26 +180,25 @@ void loop() {
         
     }
 
-    if (digitalRead(BUTTON_START) == HIGH)
-    {
+    // if (digitalRead(BUTTON_START) == HIGH)
+    // {
+    //     Serial.println("Iniciando la prueba...");
+    //     Buzzer::startSound();
 
-        Buzzer::startSound();
+    //     Serial.println("Start feching data");
+    //     JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
+    //     Serial.println("Feching data finished");
+    //     // dataManager.writeJsonToLittleFS(doc);
+    //     Serial.println("Data writing to file: ");
+    //     dataManager.writeJsonToSPIFFS(doc);
+    //     Serial.println("Data sending to server: ");
+    //     // sendDataToServer(doc);
+    //     Serial.println("Data sent to server");
+    //     JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
+    //     //sendDataToServer(docToSend);
 
-        Serial.println("Start feching data");
-        JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
-        Serial.println("Feching data finished");
-        // dataManager.writeJsonToLittleFS(doc);
-        Serial.println("Data writing to file: ");
-        dataManager.writeJsonToSPIFFS(doc);
-        Serial.println("Data sending to server: ");
-        // sendDataToServer(doc);
-        Serial.println("Data sent to server");
-        JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
-        //sendDataToServer(docToSend);
-
-        Buzzer::finishedSound();
-
-    }
+    //     Buzzer::finishedSound();
+    // }
 
 }
 
