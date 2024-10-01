@@ -8,20 +8,21 @@
 #include "DataManager.h"
 #include "Secrets.h"
 #include "Buzzer.h"
-#include "MQTTClientManager.cpp"
+#include <PubSubClient.h>
 
 #define BUTTON_OFFSET 2 //BLUE
 #define BUTTON_START 4  //RED
 #define BUZZER_PIN 5 // Pin digital connected to buzzer
 
+
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
-const char* broker = "9b70538eb18549bd83e08559ada08092.s1.eu.hivemq.cloud";
-const int port = 8883;
-const char* topic = "test/topic";
 
-// MQTT manager
-MQTTClientManager mqttManager(broker, port, topic);
+WiFiClient wifiClient;
+PubSubClient client(wifiClient);
+const char* mqtt_server = "broker.emqx.io"; // Dirección del broker
+const int mqtt_port = 1883; // Puerto del broker MQTT (TLS)
+const char* mqtt_topic = "medition/Device"; // Tópico al cual se suscribe para recibir mensajes
 
 DataManager dataManager;
 
@@ -62,6 +63,61 @@ void sendDataToServer(JsonDocument& doc) {
         Serial.println("Error de conexión WiFi");
     }
 }
+
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+    String message;
+    for (int i = 0; i < length; i++) {
+        message += (char)payload[i];
+    }
+    
+    Serial.print("Mensaje recibido en el tópico: ");
+    Serial.println(topic);
+    Serial.print("Mensaje: ");
+    Serial.println(message);
+    
+    // Si el mensaje es "start", iniciar la prueba
+    if (message == "start") {
+        Serial.println("Recibido comando 'start'. Iniciando prueba del sensor...");
+        Buzzer::startSound();
+
+        JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
+        Serial.println("Feching data finished");
+
+        // Escribir datos a SPIFFS
+        dataManager.writeJsonToSPIFFS(doc);
+        Serial.println("Data written to SPIFFS");
+
+        // Leer los datos guardados
+        JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
+
+        // Enviar datos al servidor si es necesario
+        sendDataToServer(docToSend);
+
+        Buzzer::finishedSound();
+    }
+}
+
+void setupMQTT() {
+    
+    client.setServer(mqtt_server, mqtt_port);
+    client.setCallback(mqttCallback);
+}
+
+void reconnectMQTT() {
+    // Reintentar conexión en caso de desconexión
+    while (!client.connected()) {
+        Serial.print("Intentando conectar al broker MQTT...");
+        if (client.connect("ESP32Client")) {
+            Serial.println("Conectado al broker MQTT");
+            client.subscribe(mqtt_topic); // Suscribirnos al tópico
+        } else {
+            Serial.print("Error de conexión MQTT, rc=");
+            Serial.print(client.state());
+            delay(5000);
+        }
+    }
+}
+
 
 
 void setup() {
@@ -114,7 +170,7 @@ void setup() {
 
         // MPU6050 configuration
 
-    if(sensorManager.getConfigSensor()->setScaleRange()) {
+     if(sensorManager.getConfigSensor()->setScaleRange()) {
         Serial.print("Configuración de rangos de escala completa exitosa.");
     } else {
         Serial.print("Error en la configuración de rangos de escala completa.");
@@ -126,43 +182,18 @@ void setup() {
         Serial.print("Error al configurar la frecuencia de muestreo.");
     }
 
-    // Inicializar MQTT
-    mqttManager.connect(); //Conectar al broker MQTT
-    mqttManager.setCallback([](char* topic, byte* payload, unsigned int length) {
-    Serial.print("Mensaje recibido en el topic: ");
-    Serial.println(topic);
-    String messageTemp;
-    for (int i = 0; i < length; i++) {
-        messageTemp += (char)payload[i];
-    }
-    Serial.println("Mensaje: " + messageTemp);
-
-    if (messageTemp == "start") {
-        Serial.println("Iniciando la prueba...");
-        Buzzer::startSound();
-
-        Serial.println("Start feching data");
-        JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
-        Serial.println("Feching data finished");
-        // dataManager.writeJsonToLittleFS(doc);
-        Serial.println("Data writing to file: ");
-        dataManager.writeJsonToSPIFFS(doc);
-        Serial.println("Data sending to server: ");
-        // sendDataToServer(doc);
-        Serial.println("Data sent to server");
-        JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
-        //sendDataToServer(docToSend);
-
-        Buzzer::finishedSound();
-    }
-    });
+    // Configuración MQTT
+    setupMQTT();    
 
 }
 
 void loop() {
 
-    mqttManager.loop();
-
+    if (!client.connected()) {
+        reconnectMQTT();
+    }
+    client.loop(); // Mantiene activa la conexión MQTT
+    
     if (digitalRead(BUTTON_OFFSET) == HIGH)
     {
 
@@ -182,7 +213,7 @@ void loop() {
 
     // if (digitalRead(BUTTON_START) == HIGH)
     // {
-    //     Serial.println("Iniciando la prueba...");
+
     //     Buzzer::startSound();
 
     //     Serial.println("Start feching data");
@@ -198,9 +229,7 @@ void loop() {
     //     //sendDataToServer(docToSend);
 
     //     Buzzer::finishedSound();
+
     // }
 
 }
-
-
-
