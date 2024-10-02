@@ -37,7 +37,7 @@ void sendDataToServer(JsonDocument& doc) {
         HTTPClient http;
 
         // Dirección IP del servidor y la ruta donde recibirás los datos
-        http.begin("http://192.168.1.3:8080/sensor-data");
+        http.begin("http://192.168.18.26:8080/evaluation/sensor");
 
         // Establecer el tipo de contenido como JSON
         http.addHeader("Content-Type", "application/json");
