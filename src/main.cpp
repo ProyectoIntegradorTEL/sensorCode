@@ -8,6 +8,7 @@
 #include "DataManager.h"
 #include "Secrets.h"
 #include "Buzzer.h"
+#include <PubSubClient.h>
 
 #define BUTTON_OFFSET 2 //BLUE
 #define BUTTON_START 4  //RED
@@ -16,6 +17,13 @@
 
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
+
+WiFiClient wifiClient;
+PubSubClient client(wifiClient);
+const char* mqtt_server = "broker.emqx.io"; // Dirección del broker
+const int mqtt_port = 1883; // Puerto del broker MQTT (TLS)
+const char* mqtt_topic = "medition/Device"; // Tópico al cual se suscribe para recibir mensajes
+
 DataManager dataManager;
 
 
@@ -29,7 +37,7 @@ void sendDataToServer(JsonDocument& doc) {
         HTTPClient http;
 
         // Dirección IP del servidor y la ruta donde recibirás los datos
-        http.begin("http://192.168.1.3:8080/sensor-data");
+        http.begin("http://192.168.18.26:8080/evaluation/sensor");
 
         // Establecer el tipo de contenido como JSON
         http.addHeader("Content-Type", "application/json");
@@ -55,6 +63,61 @@ void sendDataToServer(JsonDocument& doc) {
         Serial.println("Error de conexión WiFi");
     }
 }
+
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+    String message;
+    for (int i = 0; i < length; i++) {
+        message += (char)payload[i];
+    }
+    
+    Serial.print("Mensaje recibido en el tópico: ");
+    Serial.println(topic);
+    Serial.print("Mensaje: ");
+    Serial.println(message);
+    
+    // Si el mensaje es "start", iniciar la prueba
+    if (message == "start") {
+        Serial.println("Recibido comando 'start'. Iniciando prueba del sensor...");
+        Buzzer::startSound();
+
+        JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
+        Serial.println("Feching data finished");
+
+        // Escribir datos a SPIFFS
+        dataManager.writeJsonToSPIFFS(doc);
+        Serial.println("Data written to SPIFFS");
+
+        // Leer los datos guardados
+        JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
+
+        // Enviar datos al servidor si es necesario
+        sendDataToServer(docToSend);
+
+        Buzzer::finishedSound();
+    }
+}
+
+void setupMQTT() {
+    
+    client.setServer(mqtt_server, mqtt_port);
+    client.setCallback(mqttCallback);
+}
+
+void reconnectMQTT() {
+    // Reintentar conexión en caso de desconexión
+    while (!client.connected()) {
+        Serial.print("Intentando conectar al broker MQTT...");
+        if (client.connect("ESP32Client")) {
+            Serial.println("Conectado al broker MQTT");
+            client.subscribe(mqtt_topic); // Suscribirnos al tópico
+        } else {
+            Serial.print("Error de conexión MQTT, rc=");
+            Serial.print(client.state());
+            delay(5000);
+        }
+    }
+}
+
 
 
 void setup() {
@@ -119,10 +182,17 @@ void setup() {
         Serial.print("Error al configurar la frecuencia de muestreo.");
     }
 
+    // Configuración MQTT
+    setupMQTT();    
+
 }
 
 void loop() {
 
+    if (!client.connected()) {
+        reconnectMQTT();
+    }
+    client.loop(); // Mantiene activa la conexión MQTT
     
     if (digitalRead(BUTTON_OFFSET) == HIGH)
     {
@@ -141,28 +211,25 @@ void loop() {
         
     }
 
-    if (digitalRead(BUTTON_START) == HIGH)
-    {
+    // if (digitalRead(BUTTON_START) == HIGH)
+    // {
 
-        Buzzer::startSound();
+    //     Buzzer::startSound();
 
-        Serial.println("Start feching data");
-        JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
-        Serial.println("Feching data finished");
-        // dataManager.writeJsonToLittleFS(doc);
-        Serial.println("Data writing to file: ");
-        dataManager.writeJsonToSPIFFS(doc);
-        Serial.println("Data sending to server: ");
-        // sendDataToServer(doc);
-        Serial.println("Data sent to server");
-        JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
-        //sendDataToServer(docToSend);
+    //     Serial.println("Start feching data");
+    //     JsonDocument doc = sensorManager.getDataFetcher()->fetchAndconverDataToJSON(1);
+    //     Serial.println("Feching data finished");
+    //     // dataManager.writeJsonToLittleFS(doc);
+    //     Serial.println("Data writing to file: ");
+    //     dataManager.writeJsonToSPIFFS(doc);
+    //     Serial.println("Data sending to server: ");
+    //     // sendDataToServer(doc);
+    //     Serial.println("Data sent to server");
+    //     JsonDocument docToSend = dataManager.readJsonFromSPIFFS();
+    //     //sendDataToServer(docToSend);
 
-        Buzzer::finishedSound();
+    //     Buzzer::finishedSound();
 
-    }
+    // }
 
 }
-
-
-
