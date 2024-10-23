@@ -49,7 +49,7 @@ JsonDocument  DataManager::readJsonFromSPIFFS() {
     }
 
     // Imprimir el contenido del JSON en el Serial Monitor
-    serializeJsonPretty(doc, Serial);
+    //serializeJsonPretty(doc, Serial);
     return doc;
     // Cerrar el archivo
     file.close();

@@ -24,24 +24,17 @@ bool DataFetcher::fetchData(int8_t duration){
     unsigned long elapsedTime = 0;
     while (elapsedTime < duration * 1000) {
         sensor.getMotion6(&reading.accX, &reading.accY, &reading.accZ, &reading.gyroX, &reading.gyroY, &reading.gyroZ);
-        Serial.print("Acelerómetro: ");
-        Serial.print("X = "); Serial.print(reading.accX, 2);
-        Serial.print(" g | Y = "); Serial.print(reading.accY, 2);
-        Serial.print(" g | Z = "); Serial.print(reading.accZ, 2); Serial.println(" g");
-
-        Serial.print("Giroscopio: ");
-        Serial.print("X = "); Serial.print(reading.gyroX, 2);
-        Serial.print(" °/s | Y = "); Serial.print(reading.gyroY, 2);
-        Serial.print(" °/s | Z = "); Serial.print(reading.gyroZ, 2); Serial.println(" °/s");
         reading.timestamp = millis();
         addReading(reading);
         currentTime = millis();
         elapsedTime = currentTime - startTime;
+        delay(15);
     }
     return true;
 }
 
 JsonDocument DataFetcher::fetchAndconverDataToJSON(int8_t duration){
+    
     
     if (isEmpty()) {
         Serial.println("LinkedList is empty. Fetching data from sensor.");
@@ -50,7 +43,6 @@ JsonDocument DataFetcher::fetchAndconverDataToJSON(int8_t duration){
     }
 
     
-
     JsonObject readings = doc["readings"].to<JsonObject>(); 
     JsonArray accelArray = readings["accelerometer"].to<JsonArray>();
     JsonArray gyroArray = readings["gyroscope"].to<JsonArray>();
@@ -73,8 +65,10 @@ JsonDocument DataFetcher::fetchAndconverDataToJSON(int8_t duration){
         gyroJSON["z"] = readingRaw.gyroZ * sensitivity[1];
         gyroJSON["timestamp"] = readingRaw.timestamp / 1000.0;
         }
+    String stringJson ; 
 
-    serializeJson(doc, Serial);
+
+  
     return doc;
 }
 

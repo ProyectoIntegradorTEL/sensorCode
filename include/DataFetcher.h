@@ -13,7 +13,7 @@ class DataFetcher{
 
 
     public:        
-    
+        
     DataFetcher(MPU6050 &sensor);
     ~DataFetcher(); 
 
