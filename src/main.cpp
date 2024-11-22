@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include "globals.h"
 #include <WiFi.h>
+#define DEBUG_ESP_HTTP_CLIENT
 #include <HTTPClient.h>
 #include "DataManager.h"
 #include "Secrets.h"
@@ -35,32 +36,34 @@ DataManager dataManager;
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
-void sendDataToServer(JsonDocument& doc) {
+
+
+
+void sendDataToServer() {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
 
-        // Dirección IP del servidor y la ruta donde recibirás los datos
-        http.begin("http://192.168.18.26:8080/evaluation/sensor");
+        String serverUrl = "http://192.168.18.76:8081/evaluation/preview";
+        Serial.println("Conectando a: " + serverUrl);
 
-        // Establecer el tipo de contenido como JSON
+        http.begin(serverUrl);
+        delay(100); // Retraso para estabilizar la conexión
+
         http.addHeader("Content-Type", "application/json");
 
-        // Convertir el documento JSON a una cadena
-        String jsonData;
-        serializeJson(doc, jsonData);
+        Serial.println("Datos enviados:");
+        Serial.println(messageTosend);
 
-        // Enviar la solicitud POST con los datos
-        int httpResponseCode = http.POST(jsonData);
+        int httpResponseCode = http.POST(messageTosend);
 
-        // Verificar la respuesta del servidor
         if (httpResponseCode > 0) {
             String response = http.getString();
             Serial.println("Respuesta del servidor: " + response);
         } else {
             Serial.println("Error en la solicitud: " + String(httpResponseCode));
+            http.writeToStream(&Serial); // Imprimir detalles de la solicitud fallida
         }
 
-        // Finalizar la conexión HTTP
         http.end();
     } else {
         Serial.println("Error de conexión WiFi");
@@ -207,6 +210,7 @@ void setup() {
         Serial.println("Conectando a WiFi...");
     }
 
+    Serial.println(WiFi.localIP());
     Serial.println("Conectado a la red WiFi");
 
     // Conexión I2C
@@ -269,19 +273,13 @@ void loop() {
     }
 
     if (shouldPublishTestMessage) {
-        sendLargeMessage(messageTosend);
+        
 
-        String messageFinish = ".";
+        Serial.println("Enviando mensaje...");
+        Serial.print(messageTosend);
+        sendDataToServer();
 
-        // Publicar mensaje de finalización con QoS 1
-        if (client.publish(mqtt_topicSendResult, messageFinish, false, 1)) {
-            Serial.println("Finished sent.");
-        } else {
-            Serial.print("Error al enviar el finished ");
-            Serial.print(" Error: ");
-            Serial.println(client.lastError());
-        }
-
-        shouldPublishTestMessage = false; // Restablecer la bandera
+        shouldPublishTestMessage = false; 
     }
+
 }
