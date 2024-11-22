@@ -28,7 +28,7 @@ bool DataFetcher::fetchData(int8_t duration){
         addReading(reading);
         currentTime = millis();
         elapsedTime = currentTime - startTime;
-        delay(15);
+        delay(100);
     }
     return true;
 }
