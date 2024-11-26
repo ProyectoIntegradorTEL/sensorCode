@@ -110,56 +110,6 @@ void connectToMqtt() {
     }
 }
 
-void sendLargeMessage(const String& largeMessage) {
-    const size_t fragmentSize = 1000;
-    size_t totalLength = largeMessage.length();
-    size_t fragmentCount = (totalLength + fragmentSize - 1) / fragmentSize;
-
-    for (size_t i = 0; i < fragmentCount; i++) {
-        size_t start = i * fragmentSize;
-        size_t len = fragmentSize;
-
-        if (start + len > totalLength) {
-            len = totalLength - start;
-        }
-
-        String fragment = largeMessage.substring(start, start + len);
-
-        int retryCount = 0;
-        const int maxRetries = 3;
-        bool success = false;
-
-        while (retryCount < maxRetries && !success) {
-            if (!client.connected()) {
-                connectToMqtt();
-            }
-
-            // Publicar el fragmento con QoS 1
-            if (client.publish(mqtt_topicSendResult, fragment, false, 1)) {
-                Serial.print("Fragmento ");
-                Serial.print(i);
-                Serial.println(" enviado correctamente.");
-                // Serial.println(fragment); // Puedes comentar esta línea si el fragmento es muy grande
-                success = true;
-            } else {
-                Serial.print("Error al enviar el fragmento ");
-                Serial.print(i);
-                Serial.print(" Error: ");
-                Serial.println(client.lastError());
-                retryCount++;
-            }
-        }
-
-        if (!success) {
-            Serial.print("Fallo al enviar el fragmento ");
-            Serial.println(i);
-            break;
-        }
-
-        delay(200);
-    }
-}
-
 void messageReceived(String &topic, String &payload) {
     Serial.print("Mensaje recibido en el tópico: ");
     Serial.println(topic);
@@ -182,12 +132,10 @@ void messageReceived(String &topic, String &payload) {
 
         Serial.println("Feching data finished");
 
-        // Almacenar información del documento JSON en messageTosend
+        //Save data on mee
         serializeJson(doc, messageTosend);
 
         Serial.println("Mensaje desde messageReceived");
-        // Serial.println(messageTosend); // Puedes comentar esta línea si el mensaje es muy grande
-
         size_t messageSize = messageTosend.length();
         Serial.print("Tamaño del mensaje JSON: ");
         Serial.println(messageSize);
