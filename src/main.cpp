@@ -38,30 +38,48 @@ int16_t gx, gy, gz;
 
 
 
-
 void sendDataToServer() {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
 
-        String serverUrl = "http://192.168.18.76:8081/evaluation/preview";
+        String serverUrl = "http://192.168.130.80:8081/evaluation/preview";
         Serial.println("Conectando a: " + serverUrl);
 
         http.begin(serverUrl);
-        delay(100); // Retraso para estabilizar la conexión
+        delay(2000);
 
         http.addHeader("Content-Type", "application/json");
 
-        Serial.println("Datos enviados:");
-        Serial.println(messageTosend);
 
-        int httpResponseCode = http.POST(messageTosend);
+        Serial.print("Estado WiFi: ");
+        Serial.println(WiFi.status());
+        Serial.print("Dirección IP del ESP32: ");
+        Serial.println(WiFi.localIP());
 
-        if (httpResponseCode > 0) {
-            String response = http.getString();
-            Serial.println("Respuesta del servidor: " + response);
-        } else {
-            Serial.println("Error en la solicitud: " + String(httpResponseCode));
-            http.writeToStream(&Serial); // Imprimir detalles de la solicitud fallida
+
+        int retryCount = 0;
+        const int maxRetries = 3;
+        bool success = false;
+
+        while (retryCount < maxRetries && !success) {
+            int httpResponseCode = http.POST(messageTosend);
+
+            if (httpResponseCode > 0) {
+                success = true;
+                String response = http.getString();
+                Serial.println("Respuesta del servidor: " + response);
+            } else {
+                Serial.println("Error en la solicitud: " + String(httpResponseCode));
+                http.writeToStream(&Serial); // Imprimir detalles
+                Serial.println("Error en la solicitud: " + String(httpResponseCode));
+                Serial.println("Error: " + http.errorToString(httpResponseCode));
+                retryCount++;
+                delay(1000); // Retraso antes de volver a intentar
+            }
+        }
+
+        if (!success) {
+            Serial.println("Fallo en todas las solicitudes.");
         }
 
         http.end();
@@ -252,6 +270,36 @@ void setup() {
     connectToMqtt();
 }
 
+void performHttpGet() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+
+    // URL del servidor público
+    String serverUrl = "http://jsonplaceholder.typicode.com/posts/1";
+
+    Serial.println("Iniciando solicitud HTTP GET a: " + serverUrl);
+
+    http.begin(serverUrl);
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode > 0) {
+      // La solicitud fue exitosa
+      Serial.println("Código de respuesta: " + String(httpResponseCode));
+      String response = http.getString();
+      Serial.println("Respuesta del servidor:");
+      Serial.println(response);
+    } else {
+      // Error en la solicitud
+      Serial.println("Error en la solicitud: " + String(httpResponseCode));
+      Serial.println("Error: " + http.errorToString(httpResponseCode));
+    }
+
+    http.end(); // Liberar recursos
+  } else {
+    Serial.println("Error de conexión WiFi");
+  }
+}
+
 void loop() {
     client.loop();
 
@@ -274,11 +322,7 @@ void loop() {
 
     if (shouldPublishTestMessage) {
         
-
-        Serial.println("Enviando mensaje...");
-        Serial.print(messageTosend);
         sendDataToServer();
-
         shouldPublishTestMessage = false; 
     }
 
