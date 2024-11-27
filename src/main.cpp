@@ -139,10 +139,8 @@ void messageReceived(String &topic, String &payload) {
         size_t messageSize = messageTosend.length();
         Serial.print("Tamaño del mensaje JSON: ");
         Serial.println(messageSize);
-
-        Serial.print("Memoria libre 2: ");
-        Serial.print(ESP.getFreeHeap());
-        Serial.println(" bytes");
+        Serial.println("Mensaje en formato JSON:");
+        Serial.println(messageTosend);
 
         shouldPublishTestMessage = true;
 
@@ -205,7 +203,7 @@ void setup() {
         Serial.print("Error en la configuración de rangos de escala completa.");
     }
 
-    if (sensorManager.getConfigSensor()->setSamplingFrequency(4, 0)) {
+    if (sensorManager.getConfigSensor()->setSamplingFrequency(3, 0)) {
         Serial.print("Frecuencia de muestreo configurada correctamente.");
     } else {
         Serial.print("Error al configurar la frecuencia de muestreo.");
