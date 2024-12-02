@@ -22,13 +22,17 @@ bool DataFetcher::fetchData(int8_t duration){
     unsigned long startTime = millis();
     unsigned long currentTime = millis();
     unsigned long elapsedTime = 0;
-    while (elapsedTime < duration * 1000) {
+    while (elapsedTime <= duration * 1000) {
+        Serial.print("Elapsed time: ");
+        Serial.println(elapsedTime);
+
         sensor.getMotion6(&reading.accX, &reading.accY, &reading.accZ, &reading.gyroX, &reading.gyroY, &reading.gyroZ);
         reading.timestamp = millis();
         addReading(reading);
+        delay(45);
         currentTime = millis();
         elapsedTime = currentTime - startTime;
-        delay(100);
+        
     }
     return true;
 }
